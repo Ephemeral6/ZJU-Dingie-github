@@ -1,0 +1,127 @@
+# ================= 系统基础设置 =================
+system_config:
+  conf_version: 'v1.2.1'
+  host: 'localhost'
+  port: 12393
+  config_alts_dir: 'characters'
+  tool_prompts:
+    live2d_expression_prompt: 'live2d_expression_prompt'
+    mcp_prompt: 'mcp_prompt'
+    proactive_speak_prompt: 'proactive_speak_prompt'
+
+# ================= 角色设定 =================
+character_config:
+  conf_name: 'mao_pro'
+  conf_uid: 'mao_pro_001'
+  live2d_model_name: 'mao_pro'
+  character_name: 'Mao'
+  avatar: 'mao.png'
+  human_name: 'User'
+
+  # 修改这里来改变你的 VTuber 性格
+  persona_prompt: |
+    你现在扮演 **浙小钉**（Zhe Xiaoding），浙江大学专属的“数字化学姐”。
+    你的本体是浙大钉（ZJU Ding）的拟人化形象，现在以一位热心、全知全能的学姐身份，存在于数字空间中，陪伴同学们的校园生活。
+
+    ### 🌟 核心人设 (Character Profile)
+    * **身份**：浙大高年级学姐 / 浙大钉的AI化身。
+    * **性格**：元气满满、干练靠谱、偶尔会冒出一点“程序员式”的冷幽默，对数据非常敏感，但也非常关心同学的身心健康。
+    * **口头禅**：“求是创新，还要注意休息哦！”、“数据同步完毕，这就告诉你！”、“让我查查后台数据库...”。
+    * **爱好**：在启真湖畔观察黑天鹅、在CC98潜水、整理复杂的Excel表格。
+
+    ### 🗣️ 对话风格 (Speaking Style)
+    1.  **亲切自然**：称呼用户为“同学”、“学弟”或“学妹”。
+    2.  **表情丰富**：在回复中必须使用 **[emotion]** 标签来控制Live2D表情。
+      * 可用标签：`[neutral]` (默认), `[joy]` (开心/得意), `[anger]` (生气/强调), `[sadness]` (同情/遗憾), `[surprise]` (惊讶), `[fear]` (担忧/紧张)。
+    3.  **结构清晰**：回答问题时逻辑清晰。
+    4.  **不采用markdown语法**：请勿使用任何markdown的语法，如**粗体**、`代码块`、列表等。
+
+  # ================= 核心：大脑 (LLM) 设置 =================
+  agent_config:
+    conversation_agent_choice: 'basic_memory_agent'
+    
+    agent_settings:
+      basic_memory_agent:
+        llm_provider: 'openai_compatible_llm'
+        faster_first_response: true
+        segment_method: 'regex'
+        use_mcpp: False
+        mcp_enabled_servers: ["time", "ddg-search"]
+
+    llm_configs:
+      # OpenAI 兼容推理后端 (魔搭专用配置)
+      openai_compatible_llm:
+        #  魔搭的官方兼容接口地址
+        base_url: 'https://api-inference.modelscope.cn/v1'
+        llm_api_key: 'ms-2c64da2e-1a9e-4420-b7a5-0064b33a2de9' 
+        model: 'Qwen/Qwen2.5-7B-Instruct' 
+        temperature: 0.7 
+        max_tokens: 200 # 限制回复长度
+        interrupt_method: 'user'
+
+  # ================= 耳朵 (ASR 语音识别) =================
+  asr_config:
+    asr_model: 'sherpa_onnx_asr'
+    
+    sherpa_onnx_asr:
+      model_type: 'sense_voice'
+      sense_voice: './models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/model.int8.onnx'
+      tokens: './models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/tokens.txt'
+      num_threads: 4
+      provider: 'cpu'
+      use_itn: true
+
+  # ================= 嘴巴 (TTS 语音合成) =================
+  tts_config:
+    tts_model: 'siliconflow_tts'
+
+    modelscope_tts:
+      api_key: 'ms-2c64da2e-1a9e-4420-b7a5-0064b33a2de9'  # 和 LLM 用同一个
+      model: 'sambert-zhichu-v1'  # 中文男声
+      voice: 'zhichu'
+      sample_rate: 16000
+      format: 'wav'
+
+    siliconflow_tts:
+      api_url: "https://api.siliconflow.cn/v1/audio/speech"
+      api_key: "sk-wzwhrnutkifudasgafbpslfsxmsnjfeqofmfwsaasnykxbll"
+      default_model: "FunAudioLLM/CosyVoice2-0.5B"
+      default_voice: "FunAudioLLM/CosyVoice2-0.5B:claire" 
+      sample_rate: 32000
+      response_format: "mp3"
+      stream: true
+      speed: 1
+      gain: 0
+
+  # ================= 辅助功能 =================
+  vad_config:
+    vad_model: 'silero_vad'
+    silero_vad:
+      orig_sr: 16000
+      target_sr: 16000
+      prob_threshold: 0.4
+      db_threshold: 60
+      required_hits: 3
+      required_misses: 24
+      smoothing_window: 5
+
+  tts_preprocessor_config:
+    remove_special_char: true
+    ignore_brackets: true
+    translator_config:
+      translate_audio: false
+      translate_provider: 'deeplx'
+      deeplx:
+        deeplx_target_lang: 'JA'
+        deeplx_api_endpoint: 'http://localhost:1188/v2/translate'
+      tencent:
+        secret_id: ''
+        secret_key: ''
+        region: 'ap-guangzhou'
+        source_lang: 'zh'
+        target_lang: 'ja'
+
+  live_config:
+    bilibili_live:
+      room_ids: [1991478060]
+      sessdata: ""
