@@ -171,6 +171,18 @@ class LettaConfig(I18nMixin, BaseModel):
         ),
     }
 
+class RAGAgentConfig(I18nMixin, BaseModel):
+    """Configuration for the RAG agent."""
+    
+    # 定义允许的字段，与 conf.yaml 中的 key 对应
+    vector_db_path: str = Field("./chroma_db", alias="vector_db_path")
+
+    DESCRIPTIONS: ClassVar[Dict[str, Description]] = {
+        "vector_db_path": Description(
+            en="Path to the local vector database", 
+            zh="本地向量数据库的文件夹路径"
+        ),
+    }
 
 class AgentSettings(I18nMixin, BaseModel):
     """Settings for different types of agents."""
@@ -181,6 +193,7 @@ class AgentSettings(I18nMixin, BaseModel):
     mem0_agent: Optional[Mem0Config] = Field(None, alias="mem0_agent")
     hume_ai_agent: Optional[HumeAIConfig] = Field(None, alias="hume_ai_agent")
     letta_agent: Optional[LettaConfig] = Field(None, alias="letta_agent")
+    rag_agent: Optional[RAGAgentConfig] = Field(None, alias="rag_agent")
 
     DESCRIPTIONS: ClassVar[Dict[str, Description]] = {
         "basic_memory_agent": Description(
@@ -200,7 +213,7 @@ class AgentConfig(I18nMixin, BaseModel):
     """This class contains all of the configurations related to agent."""
 
     conversation_agent_choice: Literal[
-        "basic_memory_agent", "mem0_agent", "hume_ai_agent", "letta_agent"
+        "basic_memory_agent", "mem0_agent", "hume_ai_agent", "letta_agent", "rag_agent"
     ] = Field(..., alias="conversation_agent_choice")
     agent_settings: AgentSettings = Field(..., alias="agent_settings")
     llm_configs: StatelessLLMConfigs = Field(..., alias="llm_configs")

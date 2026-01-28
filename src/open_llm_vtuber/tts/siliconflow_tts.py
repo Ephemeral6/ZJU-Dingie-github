@@ -1,3 +1,4 @@
+import re
 import requests
 from loguru import logger
 from .tts_interface import TTSInterface
@@ -27,11 +28,34 @@ class SiliconFlowTTS(TTSInterface):
         self.gain = gain
 
     def generate_audio(self, text: str, file_name_no_ext=None) -> str:
+        # =========== [链接拦截逻辑] ===========
+        original_text = text
+        
+        # 只删除完整的 URL (http/https 开头的)
+        # 不要删除域名片段，避免误删太多内容
+        text = re.sub(r'https?://\S+', '', text)
+        
+        # 清理可能残留的空括号
+        text = text.replace('()', '').replace('（）', '')
+        text = text.replace('[]', '').replace('【】', '')
+
+        # 4. 调试日志 (非常重要，看看到底删干净没)
+        if text.strip() != original_text.strip():
+            logger.info(f"🔇 [拦截触发] 原始: '{original_text}' -> 最终: '{text}'")
+        # ======================================
+
+        # ... 下面的代码不用动 ...
+        
+        # 如果删完之后没词了，直接返回（防止报错）
+        if not text.strip():
+            logger.warning("TTS: 内容全是链接，已跳过生成。")
+            return ""
+
         cache_file = self.generate_cache_file_name(
             file_name_no_ext, file_extension=self.response_format
         )
         payload = {
-            "input": text,
+            "input": text, 
             "response_format": self.response_format,
             "sample_rate": self.sample_rate,
             "stream": self.stream,
@@ -44,25 +68,22 @@ class SiliconFlowTTS(TTSInterface):
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
-
+        
+        # ... (后续 requests 请求代码保持不变) ...
         try:
             if self.api_url is None:
-                logger.error(
-                    "API URL 未正确配置，请检查配置文件。The configuration is incorrect. Please check the configuration file."
-                )
+                 # ...
                 return ""
             response = requests.request(
                 "POST", self.api_url, json=payload, headers=headers
             )
-            response.raise_for_status()  # Check the response status code
+            # ... (保持原样)
+            response.raise_for_status()
             with open(cache_file, "wb") as f:
                 f.write(response.content)
-            logger.info(
-                f"成功生成音频文件Successfully generated the audio file.: {cache_file}"
-            )
             return cache_file
-        except requests.RequestException as e:
-            logger.error(f"生成音频文件失败Failed to generate the audio file.: {e}")
+        except Exception as e:
+            logger.error(f"TTS Error: {e}")
             return ""
 
     def remove_file(self, filepath: str, verbose: bool = True) -> None:

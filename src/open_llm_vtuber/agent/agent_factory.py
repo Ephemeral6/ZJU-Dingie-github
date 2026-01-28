@@ -6,6 +6,7 @@ from .agents.basic_memory_agent import BasicMemoryAgent
 from .stateless_llm_factory import LLMFactory as StatelessLLMFactory
 from .agents.hume_ai import HumeAIAgent
 from .agents.letta_agent import LettaAgent
+from .agents.rag_agent import RAGAgent
 
 from ..mcpp.tool_manager import ToolManager
 from ..mcpp.tool_executor import ToolExecutor
@@ -76,6 +77,48 @@ class AgentFactory:
                 faster_first_response=basic_memory_settings.get(
                     "faster_first_response", True
                 ),
+                segment_method=basic_memory_settings.get("segment_method", "pysbd"),
+                use_mcpp=basic_memory_settings.get("use_mcpp", False),
+                interrupt_method=interrupt_method,
+                tool_prompts=tool_prompts,
+                tool_manager=tool_manager,
+                tool_executor=tool_executor,
+                mcp_prompt_string=mcp_prompt_string,
+            )
+        elif conversation_agent_choice == "rag_agent":
+                # 1. 复用 BasicMemoryAgent 的大部分配置 (LLM, 记忆等)
+            basic_memory_settings = agent_settings.get("basic_memory_agent", {})
+            llm_provider = basic_memory_settings.get("llm_provider")
+
+            if not llm_provider:
+                raise ValueError("RAG Agent 需要在 basic_memory_agent 配置中指定 llm_provider")
+
+            llm_config = llm_configs.get(llm_provider)
+            interrupt_method = llm_config.pop("interrupt_method", "user")
+
+            # 创建 LLM 实例
+            llm = StatelessLLMFactory.create_llm(
+                llm_provider=llm_provider, system_prompt=system_prompt, **llm_config
+            )
+
+            # 2. 获取 RAG 特有的配置 (数据库路径)
+            rag_settings = agent_settings.get("rag_agent", {})
+            vector_db_path = rag_settings.get("vector_db_path", "./chroma_db")
+
+            # 处理其他参数 (工具, prompts等)
+            tool_prompts = kwargs.get("system_config", {}).get("tool_prompts", {})
+            tool_manager = kwargs.get("tool_manager")
+            tool_executor = kwargs.get("tool_executor")
+            mcp_prompt_string = kwargs.get("mcp_prompt_string", "")
+
+            # 3. 返回 RAGAgent 实例
+            return RAGAgent(
+                vector_db_path=vector_db_path, # 传入向量库路径
+                llm=llm,
+                system=system_prompt,
+                live2d_model=live2d_model,
+                tts_preprocessor_config=tts_preprocessor_config,
+                faster_first_response=basic_memory_settings.get("faster_first_response", True),
                 segment_method=basic_memory_settings.get("segment_method", "pysbd"),
                 use_mcpp=basic_memory_settings.get("use_mcpp", False),
                 interrupt_method=interrupt_method,
