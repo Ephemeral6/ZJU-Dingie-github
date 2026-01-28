@@ -15,6 +15,8 @@ from src.open_llm_vtuber.config_manager import Config, read_yaml, validate_confi
 
 os.environ["HF_HOME"] = str(Path(__file__).parent / "models")
 os.environ["MODELSCOPE_CACHE"] = str(Path(__file__).parent / "models")
+# 使用 HuggingFace 国内镜像加速模型下载
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 
 upgrade_manager = UpgradeManager()
 
